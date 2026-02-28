@@ -52,7 +52,7 @@ jobs:
           ./ngrok config add-authtoken $NGROK_AUTH_TOKEN
           nohup mlflow ui --host 0.0.0.0 --port 5000 &
           sleep 5
-          nohup ./ngrok http 5000 &
+          nohup ./ngrok http 5000 --log=stdout --region=us &
           sleep 8
           echo "🔎 MLflow Public URL:"
           curl -s http://127.0.0.1:4040/api/tunnels | grep -o 'https://[0-9a-zA-Z.-]*ngrok-free.app'
