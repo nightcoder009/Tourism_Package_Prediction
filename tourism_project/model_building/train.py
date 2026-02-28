@@ -110,29 +110,35 @@ with mlflow.start_run():
     # Store and evaluate the best model
     best_model = grid_search.best_estimator_
 
+    # Default is 0.5, but this can be tuned depending on business objective
+    # (e.g., lower threshold → higher recall, higher threshold → higher precision)
     classification_threshold = 0.5
 
+    # -------- TRAIN SET PREDICTIONS --------
     y_pred_train_proba = best_model.predict_proba(Xtrain)[:, 1]
     y_pred_train = (y_pred_train_proba >= classification_threshold).astype(int)
 
+    # -------- TEST SET PREDICTIONS --------
     y_pred_test_proba = best_model.predict_proba(Xtest)[:, 1]
     y_pred_test = (y_pred_test_proba >= classification_threshold).astype(int)
 
+    # -------- MODEL EVALUATION --------
     train_report = classification_report(ytrain, y_pred_train, output_dict=True)
     test_report = classification_report(ytest, y_pred_test, output_dict=True)
 
-    # Log the metrics for the best model
+    # -------- LOG METRICS TO MLFLOW --------
     mlflow.log_metrics({
-        "train_accuracy": train_report['accuracy'],
-        "train_precision": train_report['1']['precision'],
-        "train_recall": train_report['1']['recall'],
-        "train_f1-score": train_report['1']['f1-score'],
-        "test_accuracy": test_report['accuracy'],
-        "test_precision": test_report['1']['precision'],
-        "test_recall": test_report['1']['recall'],
-        "test_f1-score": test_report['1']['f1-score']
-    })
+        "train_accuracy": train_report['accuracy'],           # Overall correctness on training data
+        "train_precision": train_report['1']['precision'],    # Of predicted positives, how many were correct (train)
+        "train_recall": train_report['1']['recall'],          # Of actual positives, how many were captured (train)
+        "train_f1-score": train_report['1']['f1-score'],      # Harmonic mean of precision & recall (train)
 
+        "test_accuracy": test_report['accuracy'],             # Overall correctness on unseen data
+        "test_precision": test_report['1']['precision'],      # Precision on test set
+        "test_recall": test_report['1']['recall'],            # Recall on test set
+        "test_f1-score": test_report['1']['f1-score']         # F1-score on test set
+    })
+    
     # Save the model locally
     model_path = "tourism_customer_purchase_v1.joblib"
     joblib.dump(best_model, model_path)
